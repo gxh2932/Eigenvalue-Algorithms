@@ -3,9 +3,7 @@ Most of these methods have Wikipedia pages. Those that don't I've added a brief 
 
 ## Homotopy Method
 
-This method aims to find the eigenpairs (eigenvectors and their corresponding eigenvalues) of a matrix $A$ by solving a system of ODEs derived from a homotopy function. The method starts with the initial conditions based on the standard unit vectors and the diagonal entries of a random diagonal matrix $D$, and gradually transforms the problem into the eigenpairs of matrix $A$ as the homotopy parameter $t$ changes from $0$ to $1$.
-
-The homotopy-based ODE system can be represented as:
+This method aims to find the eigenpairs (eigenvectors and their corresponding eigenvalues) of a matrix $A$ by solving a system of ODEs derived from a homotopy function. The method starts with the initial conditions based on a standard unit vector and diagonal entry of a random diagonal matrix $D$, and gradually transforms the problem into an eigenpair of matrix $A$ as the homotopy parameter $t$ changes from $0$ to $1$. The homotopy-based ODE system can be represented as:
 
 ```math
 \begin{bmatrix}
