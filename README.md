@@ -23,4 +23,4 @@ The homotopy-based ODE system can be represented as:
 \end{bmatrix},
 ```
 
-with initial conditions $x(0) = e_i$ and $\mu(0) = d_i$ for $i=1,\ldots,n$, where $x$ represents eigenvector and $\mu$ represents eigenvalue. As you may infer from the definition of the $i$ variable, the ODE system is solved $n$ times with the solution of each iteration corresponding to the $i\textrm{th}$ eigenpair.
+with initial conditions $x(0) = e_i$ and $\mu(0) = d_i$ for $i=1,\ldots,n$, where $x$ represents eigenvector and $\mu$ represents eigenvalue. As you may infer from the definition of the $i$ variable, the ODE system is solved $n$ times with the solution of each iteration corresponding to the $i\text{th}$ eigenpair.
