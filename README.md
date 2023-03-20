@@ -6,7 +6,7 @@ Essentially a variation of the classical bisection method, which is a root-findi
 
 The method works by first computing a lower bound alpha and upper bound beta for the eigenvalues of the matrix, using the Gershgorin Circle Theorem. Once a bound is found, we iterate through each eigenvalue index $i$ from $1$ to $n$. For each eigenvalue index $i$, we apply the bisection method augmented with Sturm sequences to find the $i$\-th smallest eigenvalue of the matrix.
 
-For more info refer to Numerical Methods for Eigenvalue Problems (2012) by Steffen Börm.
+For more info refer to _Numerical Methods for Eigenvalue Problems_ (2012) by Steffen Börm.
 
 
 ## Homotopy Method
