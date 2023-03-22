@@ -1,7 +1,7 @@
 # Eigenvalue Algorithms
 Most of these methods have Wikipedia pages. Those that don't I've added a brief description for below.
 
-Code is a little messy currently due to non-uniform notation as a result of working on this project intermittently, and stuff left over from testing but I plan on cleaning it up at some point.
+Code is a little messy currently due to non-uniform notation as a result of working on this project intermittently, and stuff left over from testing, but I plan on cleaning it up at some point.
 
 ## Bisection Method
 Essentially a variation of the classical bisection method, which is a root-finding algorithm that works by repeatedly dividing an interval in half and then selecting the subinterval where the eigenvalue is guaranteed to lie. This algorithm finds the roots of the characteristic polynomial for a $n \times n$ symmetric tridiagonal matrix, using the Gershgorin Circle Theorem (a personal favorite of mine) and Sturm sequences.
