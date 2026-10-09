@@ -1,34 +1,36 @@
 import numpy as np
 
+from _validation import iteration_limit, matrix, tolerance, vector
+
 
 def arnoldi_iteration(A, x0, m: int, tol=1e-12):
-    """Compute a basis of span{x0, A x0, ..., A^m x0} for real A.
+    """Return Q and H satisfying A Q[:, :m] = Q H for a Krylov basis.
 
-    Arguments
-      A: n x n array
-      x0: initial vector (length n)
-      m: number of Arnoldi steps, must be >= 1
-      tol: tolerance for detecting Krylov breakdown
-
-    Returns
-      Q: n x (m + 1) array containing the basis vectors
-      H: (m + 1) x m upper Hessenberg representation of A
-
-    On early breakdown, unused columns of Q and entries of H remain zero.
+    A is n x n; m is the number of steps (1 <= m <= n). Q has at most
+    m + 1 columns, and H has one column per completed step. On breakdown,
+    return only the active basis and square H. tol is relative to ||A||.
     """
-    n = A.shape[0]
-    H = np.zeros((m + 1, m))
-    Q = np.zeros((n, m + 1))
-    # Normalize the input vector
-    Q[:, 0] = x0 / np.linalg.norm(x0, 2)
-    for k in range(1, m + 1):
-        y = np.dot(A, Q[:, k - 1])  # Generate a new candidate vector
-        for j in range(k):  # Subtract the projections on previous vectors
-            H[j, k - 1] = np.dot(Q[:, j].T, y)
-            y = y - H[j, k - 1] * Q[:, j]
-        H[k, k - 1] = np.linalg.norm(y, 2)
-        if H[k, k - 1] > tol:
-            Q[:, k] = y / H[k, k - 1]
-        else:  # Stop when the next basis vector is too small to normalize.
-            return Q, H
+    A = matrix(A)
+    m, tol = iteration_limit(m), tolerance(tol)
+    n = len(A)
+    if not 1 <= m <= n:
+        raise ValueError("m must be between 1 and n")
+    x0 = vector(x0, n)
+    dtype = np.result_type(A, x0)
+    Q = np.zeros((n, m + 1), dtype=dtype)
+    H = np.zeros((m + 1, m), dtype=dtype)
+    Q[:, 0] = x0 / np.linalg.norm(x0)
+    scale = max(np.linalg.norm(A, ord=np.inf), np.finfo(float).tiny)
+    for k in range(m):
+        y = A @ Q[:, k]
+        # Twice-modified Gram-Schmidt keeps the computed basis orthogonal.
+        for _ in range(2):
+            coefficients = Q[:, :k + 1].conj().T @ y
+            H[:k + 1, k] += coefficients
+            y -= Q[:, :k + 1] @ coefficients
+        beta = np.linalg.norm(y)
+        if beta <= tol * scale or k + 1 == n:
+            return Q[:, :k + 1], H[:k + 1, :k + 1]
+        H[k + 1, k] = beta
+        Q[:, k + 1] = y / beta
     return Q, H
