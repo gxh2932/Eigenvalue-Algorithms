@@ -2,6 +2,7 @@ import numpy as np
 
 
 def generate_hermite_matrix(n):
+    """Generate the n x n real symmetric matrix A used in the example."""
     A = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
@@ -12,33 +13,35 @@ def generate_hermite_matrix(n):
     return A
 
 
-def rayleigh(A, epsilon, mu, x):
-    x = x / np.linalg.norm(x)
-    y = np.linalg.solve((A - mu * np.eye(A.shape[0])), x)
-    lambda_val = y.T.dot(x)
-    mu = mu + 1 / lambda_val
-    err = np.linalg.norm(y - lambda_val * x) / np.linalg.norm(y)
+def rayleigh(A, tol, shift, x0):
+    """Approximate an eigenvector from initial vector x0 and spectral shift."""
+    x = x0 / np.linalg.norm(x0)
+    y = np.linalg.solve((A - shift * np.eye(A.shape[0])), x)
+    projection = y.T.dot(x)
+    shift = shift + 1 / projection
+    relative_residual = np.linalg.norm(y - projection * x) / np.linalg.norm(y)
 
-    while err > epsilon:
+    while relative_residual > tol:
         x = y / np.linalg.norm(y)
-        y = np.linalg.solve((A - mu * np.eye(A.shape[0])), x)
-        lambda_val = y.T.dot(x)
-        mu = mu + 1 / lambda_val
-        err = np.linalg.norm(y - lambda_val * x) / np.linalg.norm(y)
+        y = np.linalg.solve((A - shift * np.eye(A.shape[0])), x)
+        projection = y.T.dot(x)
+        shift = shift + 1 / projection
+        relative_residual = np.linalg.norm(y - projection * x) / np.linalg.norm(y)
 
     return x
 
 
 def main():
     A = generate_hermite_matrix(10)
-    x = np.random.rand(A.shape[1])
-    mu = 1
-    epsilon = 1e-6
-    eigenvector = rayleigh(A, epsilon, mu, x)
-    eigenvalue = np.dot(np.dot(eigenvector.T, A), eigenvector)
+    x0 = np.random.rand(A.shape[1])
+    shift = 1
+    tol = 1e-6
+    x = rayleigh(A, tol, shift, x0)
+    eigval = np.dot(np.dot(x.T, A), x)
 
-    print(eigenvalue)
+    print(eigval)
     print(np.linalg.eig(A)[0])
 
 
-main()
+if __name__ == "__main__":
+    main()

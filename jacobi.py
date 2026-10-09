@@ -1,13 +1,11 @@
 import numpy as np
 
 
-# real symmetric matrix
-
-
-def jacobi_eigenvalue_algorithm(A, tolerance=1e-10):
+def jacobi_eigenvalue_algorithm(A, tol=1e-10):
+    """Return eigvals, eigenvector columns Q, and n_iter for real symmetric A."""
     n = A.shape[0]
-    eigenvectors = np.eye(n)
-    iterations = 0
+    Q = np.eye(n)
+    n_iter = 0
     while True:
         # Find maximum off-diagonal element
         max_offdiag = 0
@@ -18,7 +16,7 @@ def jacobi_eigenvalue_algorithm(A, tolerance=1e-10):
                     max_offdiag = abs(A[i, j])
                     max_i, max_j = i, j
 
-        if max_offdiag < tolerance:
+        if max_offdiag < tol:
             break
 
         # Compute the Jacobi rotation matrix
@@ -33,23 +31,24 @@ def jacobi_eigenvalue_algorithm(A, tolerance=1e-10):
 
         # Update the matrix and eigenvectors
         A = np.dot(np.dot(J.T, A), J)
-        eigenvectors = np.dot(eigenvectors, J)
-        iterations += 1
+        Q = np.dot(Q, J)
+        n_iter += 1
 
     # Extract eigenvalues and eigenvectors
-    eigenvalues = np.diag(A)
+    eigvals = np.diag(A)
 
-    return eigenvalues, eigenvectors, iterations
+    return eigvals, Q, n_iter
 
 
 def main():
     A = np.random.randn(3,3)
     A = A + A.T
 
-    eigenvalues, eigenvectors, iterations = jacobi_eigenvalue_algorithm(A)
+    eigvals, Q, n_iter = jacobi_eigenvalue_algorithm(A)
 
-    print(eigenvalues)
+    print(eigvals)
     print(np.linalg.eig(A)[0])
 
 
-main()
+if __name__ == "__main__":
+    main()

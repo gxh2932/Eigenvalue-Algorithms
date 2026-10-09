@@ -6,19 +6,22 @@ import scipy.integrate as spi
 
 # Define the right-hand side of the ODE system
 def f(t, y, A, D):
+    """Return dy/dt for the eigenpair state y = [x, eigval]."""
     y = y.reshape(y.shape[0], 1)
 
     x = y[:-1]
-    mu = y[-1]
+    eigval = y[-1]
 
-    # Compute the matrix M and vector b
-    M = np.block([[mu * np.eye(A.shape[0]) - (D + t * (A - D)), x], [x.conj().T, 0]])
-    b = np.block([[(A - D) @ x], [0]])
+    # Compute the augmented system matrix and right-hand side
+    system_matrix = np.block(
+        [[eigval * np.eye(A.shape[0]) - (D + t * (A - D)), x], [x.conj().T, 0]]
+    )
+    rhs = np.block([[(A - D) @ x], [0]])
 
-    # Solve M * dy/dt = b for dy/dt
-    dydt = np.linalg.solve(M, b)
+    # Solve system_matrix * dy/dt = rhs for dy/dt
+    dy_dt = np.linalg.solve(system_matrix, rhs)
 
-    return dydt.T[0]
+    return dy_dt.T[0]
 
 
 def main():
@@ -35,8 +38,8 @@ def main():
         # Get the ith standard unit vector and diagonal entry of D
         e_i = np.zeros(n)
         e_i[i] = 1
-        d_i = D[i,i]
-        # Concatenate x(0) and mu(0) as a real vector
+        d_i = D[i, i]
+        # Concatenate x(0) and eigval(0) as a real vector
         y0 = np.block([e_i, d_i])
         y0_list.append(y0)
 
@@ -44,17 +47,18 @@ def main():
     t_span = (0, 1)
 
     # Solve the ODEs for each i using solve_ivp
-    sol_list = []
+    solutions = []
     for y0 in y0_list:
-        sol = spi.solve_ivp(f, t_span, y0, t_eval=[1], args=(A, D))
-        sol_list.append(sol)
+        solution = spi.solve_ivp(f, t_span, y0, t_eval=[1], args=(A, D))
+        solutions.append(solution)
 
     # Print the solutions for each i
-    for i, sol in enumerate(sol_list):
+    for i, solution in enumerate(solutions):
         print(f"Solution for i={i+1}:")
-        print('eigval: ', sol.y[-1, -1])
+        print('eigval: ', solution.y[-1, -1])
 
     print(np.linalg.eig(A)[0])
 
 
-main()
+if __name__ == "__main__":
+    main()

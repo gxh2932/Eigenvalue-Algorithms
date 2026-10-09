@@ -1,27 +1,26 @@
 import numpy as np
 
 
-# real symmetric matrix
-
-
 def QR_decomposition(A):
+    """Return the orthonormal basis Q and upper triangular factor R of A."""
     m, n = A.shape
     Q = np.zeros((m, n))
     R = np.zeros((n, n))
 
-    for k in range(n):
-        v = A[:, k]
-        for j in range(k):
-            R[j, k] = np.dot(Q[:, j], A[:, k])
-            v = v - R[j, k] * Q[:, j]
-        R[k, k] = np.linalg.norm(v)
-        Q[:, k] = v / R[k, k]
+    for j in range(n):
+        y = A[:, j]
+        for i in range(j):
+            R[i, j] = np.dot(Q[:, i], A[:, j])
+            y = y - R[i, j] * Q[:, i]
+        R[j, j] = np.linalg.norm(y)
+        Q[:, j] = y / R[j, j]
 
     return Q, R
 
 
-def QR(A, num_iters=1000):
-    for k in range(num_iters):
+def QR(A, max_iter=1000):
+    """Approximate the eigenvalues of real symmetric A using QR iteration."""
+    for k in range(max_iter):
         Q, R = QR_decomposition(A)
         A = R @ Q
 
@@ -36,4 +35,5 @@ def main():
     print(np.sort(np.linalg.eigvals(A)))
 
 
-main()
+if __name__ == "__main__":
+    main()

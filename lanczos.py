@@ -2,40 +2,46 @@ import numpy as np
 from bisection import sturm_bisection, gershgorin_bound
 
 
-# Function to tri-diagonalize a matrix
-def tridiag(a, b, c, k1=-1, k2=0, k3=1):
-    return np.diag(a, k1) + np.diag(b, k2) + np.diag(c, k3)
+def tridiag(e_lower, d, e_upper, lower_offset=-1, diagonal_offset=0, upper_offset=1):
+    """Construct T from its lower, main, and upper diagonal entries."""
+    return (
+        np.diag(e_lower, lower_offset)
+        + np.diag(d, diagonal_offset)
+        + np.diag(e_upper, upper_offset)
+    )
 
 
 def lanczos(A):
-    v0 = np.zeros(A.shape[1])
-    v0.fill(1.)
-    v1 = v0 / np.linalg.norm(v0)
+    """Return the tridiagonal matrix T from the Lanczos recurrence for A."""
+    x0 = np.zeros(A.shape[1])
+    x0.fill(1.)
+    q = x0 / np.linalg.norm(x0)
 
     # First iteration steps
-    x, y = [], []
+    d, e = [], []
     n = A.shape[1]
-    v2, beta = 0.0, 0.0
+    q_prev, beta = 0.0, 0.0
 
-    for i in range(n):
+    for k in range(n):
         # Iteration steps
-        w_prime = np.dot(A, v1)
-        conj = np.matrix.conjugate(w_prime)
-        alpha = np.dot(conj, v1)
-        w = w_prime - alpha * v1 - beta * v2
-        beta = np.linalg.norm(w)
-        x.append(np.linalg.norm(alpha))
+        y = np.dot(A, q)
+        y_conj = np.matrix.conjugate(y)
+        alpha = np.dot(y_conj, q)
+        r = y - alpha * q - beta * q_prev
+        beta = np.linalg.norm(r)
+        d.append(np.linalg.norm(alpha))
 
         # Reset
-        if i < (n-1):
-            y.append(beta)
-        v2 = v1
-        v1 = w/beta
+        if k < (n - 1):
+            e.append(beta)
+        q_prev = q
+        q = r / beta
 
-    return tridiag(y, x, y)
+    return tridiag(e, d, e)
 
 
 def generate_hermite_matrix(n):
+    """Generate the n x n real symmetric matrix A used in the example."""
     A = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
@@ -54,4 +60,5 @@ def main():
     print(sorted(np.linalg.eig(A)[0]))
 
 
-main()
+if __name__ == "__main__":
+    main()

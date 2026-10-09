@@ -1,32 +1,34 @@
 import numpy as np
 
 
-def power_iteration(A, num_iterations: int):
+def power_iteration(A, max_iter: int):
+    """Approximate a dominant eigenvector of A using power iteration."""
     # Ideally choose a random vector
     # To decrease the chance that our vector
     # Is orthogonal to the eigenvector
-    b_k = np.random.rand(A.shape[1])
+    x = np.random.rand(A.shape[1])
 
-    for _ in range(num_iterations):
-        # calculate the matrix-by-vector product Ab
-        b_k1 = np.dot(A, b_k)
+    for k in range(max_iter):
+        # Calculate the matrix-vector product A x
+        y = np.dot(A, x)
 
         # calculate the norm
-        b_k1_norm = np.linalg.norm(b_k1)
+        y_norm = np.linalg.norm(y)
 
         # re normalize the vector
-        b_k = b_k1 / b_k1_norm
+        x = y / y_norm
 
-    return b_k
+    return x
 
 
 def main():
     A = np.random.rand(10, 10)
 
-    eigenvector = power_iteration(A, 100)
-    max_eigenvalue = np.dot(np.dot(eigenvector.T, A), eigenvector)
+    x = power_iteration(A, 100)
+    eigval = np.dot(np.dot(x.T, A), x)
 
-    print(max_eigenvalue)
+    print(eigval)
 
 
-main()
+if __name__ == "__main__":
+    main()

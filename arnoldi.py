@@ -1,33 +1,34 @@
 import numpy as np
 
 
-def arnoldi_iteration(A, b, n: int):
-    """Computes a basis of the (n + 1)-Krylov subspace of A: the space
-    spanned by {b, Ab, ..., A^n b}.
+def arnoldi_iteration(A, x0, m: int, tol=1e-12):
+    """Compute a basis of span{x0, A x0, ..., A^m x0} for real A.
 
     Arguments
-      A: m × m array
-      b: initial vector (length m)
-      n: dimension of Krylov subspace, must be >= 1
+      A: n x n array
+      x0: initial vector (length n)
+      m: number of Arnoldi steps, must be >= 1
+      tol: tolerance for detecting Krylov breakdown
 
     Returns
-      Q: m x (n + 1) array, the columns are an orthonormal basis of the
-        Krylov subspace.
-      h: (n + 1) x n array, A on basis Q. It is upper Hessenberg.
+      Q: n x (m + 1) array containing the basis vectors
+      H: (m + 1) x m upper Hessenberg representation of A
+
+    On early breakdown, unused columns of Q and entries of H remain zero.
     """
-    eps = 1e-12
-    h = np.zeros((n+1,n))
-    Q = np.zeros((A.shape[0],n+1))
+    n = A.shape[0]
+    H = np.zeros((m + 1, m))
+    Q = np.zeros((n, m + 1))
     # Normalize the input vector
-    Q[:,0] = b / np.linalg.norm(b,2)   # Use it as the first Krylov vector
-    for k in range(1,n+1):
-        v = np.dot(A, Q[:,k-1])  # Generate a new candidate vector
+    Q[:, 0] = x0 / np.linalg.norm(x0, 2)
+    for k in range(1, m + 1):
+        y = np.dot(A, Q[:, k - 1])  # Generate a new candidate vector
         for j in range(k):  # Subtract the projections on previous vectors
-            h[j,k-1] = np.dot(Q[:,j].T, v)
-            v = v - h[j,k-1] * Q[:,j]
-        h[k,k-1] = np.linalg.norm(v,2)
-        if h[k,k-1] > eps:  # Add the produced vector to the list, unless
-            Q[:,k] = v/h[k,k-1]
-        else:  # If that happens, stop iterating.
-            return Q, h
-    return Q, h
+            H[j, k - 1] = np.dot(Q[:, j].T, y)
+            y = y - H[j, k - 1] * Q[:, j]
+        H[k, k - 1] = np.linalg.norm(y, 2)
+        if H[k, k - 1] > tol:
+            Q[:, k] = y / H[k, k - 1]
+        else:  # Stop when the next basis vector is too small to normalize.
+            return Q, H
+    return Q, H

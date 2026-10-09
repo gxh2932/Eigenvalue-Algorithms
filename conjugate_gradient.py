@@ -2,6 +2,7 @@ import numpy as np
 
 
 def conjugate_gradient(A, b, x0, tol=1e-6, max_iter=1000):
+    """Approximate x in A x = b, starting from x0."""
     # Initialize variables
     x = x0
     r = b - A @ x
@@ -9,17 +10,17 @@ def conjugate_gradient(A, b, x0, tol=1e-6, max_iter=1000):
     r_norm = np.linalg.norm(r)
 
     # Iterate until convergence or maximum iterations
-    for i in range(max_iter):
-        Ap = A @ p
-        alpha = r_norm ** 2 / (p @ Ap)
+    for k in range(max_iter):
+        A_p = A @ p
+        alpha = r_norm ** 2 / (p @ A_p)
         x = x + alpha * p
-        r = r - alpha * Ap
-        r_norm_new = np.linalg.norm(r)
-        if r_norm_new < tol:
+        r = r - alpha * A_p
+        r_norm_next = np.linalg.norm(r)
+        if r_norm_next < tol:
             break
-        beta = r_norm_new ** 2 / r_norm ** 2
+        beta = r_norm_next ** 2 / r_norm ** 2
         p = r + beta * p
-        r_norm = r_norm_new
+        r_norm = r_norm_next
 
     return x
 
@@ -33,4 +34,5 @@ def main():
     print(np.linalg.solve(A, b))
 
 
-main()
+if __name__ == "__main__":
+    main()

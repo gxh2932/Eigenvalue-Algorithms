@@ -6,43 +6,52 @@
 import numpy as np
 
 
-def sturm_evaluate(t, a, b):
-    p = [1, t - a[0]]
-    c = 0
-    if p[0] * p[1] < 0 or p[1] == 0:
-        c += 1
-    n = len(a)
-    for m in range(2, n+1):
-        p.append((t - a[m-1]) * p[m-1] - abs(b[m-2]) ** 2 * p[m-2])
-        if p[m] * p[m-1] < 0 or p[m] == 0:
-            c += 1
-    return c
+def sturm_evaluate(z, d, e):
+    """Count sign changes in q_i(z) = det(z I - T_i) for entries d, e."""
+    q = [1, z - d[0]]
+    count = 0
+    if q[0] * q[1] < 0 or q[1] == 0:
+        count += 1
+    n = len(d)
+    for i in range(2, n + 1):
+        q.append((z - d[i - 1]) * q[i - 1] - abs(e[i - 2]) ** 2 * q[i - 2])
+        if q[i] * q[i - 1] < 0 or q[i] == 0:
+            count += 1
+    return count
 
 
-def sturm_bisection(k, a, b, alpha, beta):
-    n = a.shape[0]
-    epsilon = 1e-6
-    while beta - alpha > epsilon:
-        gamma = (beta + alpha) / 2
-        c = sturm_evaluate(gamma, a, b)
-        print(k, c)
+def sturm_bisection(index, d, e, lower, upper, tol=1e-6):
+    """Approximate the one-based index-th eigenvalue of tridiagonal T."""
+    n = d.shape[0]
+    while upper - lower > tol:
+        midpoint = (upper + lower) / 2
+        count = sturm_evaluate(midpoint, d, e)
+        print(index, count)
 
-        if k <= n - c:
-            beta = gamma
+        if index <= n - count:
+            upper = midpoint
         else:
-            alpha = gamma
+            lower = midpoint
     print()
-    return gamma
+    return midpoint
 
 
-def gershgorin_bound(a, b):
-    n = a.shape[0]
-    alpha = np.min([a[0]-np.abs(b[0]), a[n-1]-np.abs(b[n-2])] + [a[i]-np.abs(b[i])-np.abs(b[i-1]) for i in range(1, n-1)])
-    beta = np.max([a[0]+np.abs(b[0]), a[n-1]+np.abs(b[n-2])] + [a[i]+np.abs(b[i])+np.abs(b[i-1]) for i in range(1, n-1)])
-    return alpha, beta
+def gershgorin_bound(d, e):
+    """Return lower and upper eigenvalue bounds for tridiagonal entries d, e."""
+    n = d.shape[0]
+    lower = np.min(
+        [d[0] - np.abs(e[0]), d[n - 1] - np.abs(e[n - 2])]
+        + [d[i] - np.abs(e[i]) - np.abs(e[i - 1]) for i in range(1, n - 1)]
+    )
+    upper = np.max(
+        [d[0] + np.abs(e[0]), d[n - 1] + np.abs(e[n - 2])]
+        + [d[i] + np.abs(e[i]) + np.abs(e[i - 1]) for i in range(1, n - 1)]
+    )
+    return lower, upper
 
 
 def symmetric_tridiagonal_matrix(n):
+    """Generate an n x n real symmetric tridiagonal matrix T."""
     d = np.random.rand(n)
     e = np.random.rand(n-1)
     T = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
@@ -51,21 +60,22 @@ def symmetric_tridiagonal_matrix(n):
 
 def main():
     T = symmetric_tridiagonal_matrix(10)
-    a = np.diag(T)
-    b = np.diag(T, -1)
+    d = np.diag(T)
+    e = np.diag(T, -1)
 
-    alpha, beta = gershgorin_bound(a, b)
+    lower, upper = gershgorin_bound(d, e)
 
-    num_eigs = T.shape[0]
-    eigs = []
+    n = T.shape[0]
+    eigvals = []
 
-    for k in range(1, num_eigs+1):
-        eig = sturm_bisection(k, a, b, alpha, beta)
-        eigs.append(eig)
+    for index in range(1, n + 1):
+        eigval = sturm_bisection(index, d, e, lower, upper)
+        eigvals.append(eigval)
         print()
 
-    print(eigs)
+    print(eigvals)
     print(sorted(np.linalg.eig(T)[0]))
 
 
-main()
+if __name__ == "__main__":
+    main()

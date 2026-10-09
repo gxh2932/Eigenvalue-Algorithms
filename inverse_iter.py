@@ -1,27 +1,29 @@
 import numpy as np
 
 
-def inverse_iteration(A, num_iterations: int, mu: float):
-    b_k = np.random.rand(A.shape[1])
+def inverse_iteration(A, max_iter: int, shift: float):
+    """Approximate an eigenvector near shift using inverse iteration."""
+    x = np.random.rand(A.shape[1])
 
-    for _ in range(num_iterations):
-        b_k1 = np.linalg.solve(A - mu * np.eye(A.shape[0]), b_k)
+    for k in range(max_iter):
+        y = np.linalg.solve(A - shift * np.eye(A.shape[0]), x)
 
-        b_k1_norm = np.linalg.norm(b_k1)
+        y_norm = np.linalg.norm(y)
 
-        b_k = b_k1 / b_k1_norm
+        x = y / y_norm
 
-    return b_k
+    return x
 
 
 def main():
     A = np.random.rand(10, 10)
 
-    eigenvector = inverse_iteration(A, 100, 1)
-    eigenvalue = np.dot(np.dot(eigenvector.T, A), eigenvector)
+    x = inverse_iteration(A, 100, 1)
+    eigval = np.dot(np.dot(x.T, A), x)
 
-    print(eigenvalue)
+    print(eigval)
     print(np.linalg.eig(A)[0])
 
 
-main()
+if __name__ == "__main__":
+    main()
