@@ -1,44 +1,55 @@
 import numpy as np
 
-
-def generate_hermite_matrix(n):
-    A = np.zeros((n, n))
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                A[i, j] = 2 * i
-            elif i == j + 1 or i == j - 1:
-                A[i, j] = -1
-    return A
+from _validation import iteration_limit, matrix, spectral_shift, tolerance, vector
+from lanczos import generate_hermite_matrix
 
 
-def rayleigh(A, epsilon, mu, x):
-    x = x / np.linalg.norm(x)
-    y = np.linalg.solve((A - mu * np.eye(A.shape[0])), x)
-    lambda_val = y.T.dot(x)
-    mu = mu + 1 / lambda_val
-    err = np.linalg.norm(y - lambda_val * x) / np.linalg.norm(y)
+def rayleigh(A, tol, shift, x0, max_iter=1000):
+    """Return a converged eigenvector by Rayleigh quotient iteration.
 
-    while err > epsilon:
-        x = y / np.linalg.norm(y)
-        y = np.linalg.solve((A - mu * np.eye(A.shape[0])), x)
-        lambda_val = y.T.dot(x)
-        mu = mu + 1 / lambda_val
-        err = np.linalg.norm(y - lambda_val * x) / np.linalg.norm(y)
-
-    return x
+    A must be symmetric or Hermitian. Use the supplied shift for the first
+    solve, then x* A x for subsequent shifts. Accept only a small eigenpair
+    residual relative to ||A||. RQI is not globally convergent; exhaustion
+    raises RuntimeError.
+    """
+    A = matrix(A, symmetric=True)
+    tol, max_iter = tolerance(tol), iteration_limit(max_iter)
+    shift = spectral_shift(shift)
+    x = vector(x0, len(A))
+    x /= np.linalg.norm(x)
+    scale = max(np.linalg.norm(A, ord=np.inf), np.finfo(float).tiny)
+    for k in range(max_iter + 1):
+        eigval = np.vdot(x, A @ x).real
+        if np.linalg.norm(A @ x - eigval * x) <= tol * scale:
+            return x
+        if k == max_iter:
+            break
+        shifted = A - shift * np.eye(len(A))
+        try:
+            y = np.linalg.solve(shifted, x)
+        except np.linalg.LinAlgError as exc:
+            # An exact eigenvalue shift has a nullspace: recover its vector.
+            _, _, Vh = np.linalg.svd(shifted)
+            candidate = Vh[-1].conj()
+            if np.linalg.norm(A @ candidate - shift * candidate) <= tol * scale:
+                return candidate
+            raise RuntimeError("Rayleigh iteration encountered a singular solve") from exc
+        y_norm = np.linalg.norm(y)
+        if not np.isfinite(y_norm) or y_norm == 0:
+            raise FloatingPointError("Rayleigh iteration produced an invalid vector")
+        x = y / y_norm
+        shift = np.vdot(x, A @ x).real
+    raise RuntimeError("Rayleigh iteration did not converge within max_iter")
 
 
 def main():
-    A = generate_hermite_matrix(10)
-    x = np.random.rand(A.shape[1])
-    mu = 1
-    epsilon = 1e-6
-    eigenvector = rayleigh(A, epsilon, mu, x)
-    eigenvalue = np.dot(np.dot(eigenvector.T, A), eigenvector)
-
-    print(eigenvalue)
-    print(np.linalg.eig(A)[0])
+    A = generate_hermite_matrix(5)
+    x0 = np.array([1., .2, .1, .05, .01])
+    x = rayleigh(A, tol=1e-10, shift=-.5, x0=x0)
+    eigval = np.vdot(x, A @ x).real
+    print(eigval)
+    print(np.linalg.eigvalsh(A))
 
 
-main()
+if __name__ == "__main__":
+    main()

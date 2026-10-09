@@ -1,57 +1,65 @@
 import numpy as np
-from bisection import sturm_bisection, gershgorin_bound
+
+from _validation import iteration_limit, matrix, tolerance, vector
 
 
-# Function to tri-diagonalize a matrix
-def tridiag(a, b, c, k1=-1, k2=0, k3=1):
-    return np.diag(a, k1) + np.diag(b, k2) + np.diag(c, k3)
+def tridiag(e_lower, d, e_upper, lower_offset=-1, diagonal_offset=0, upper_offset=1):
+    """Construct T from its lower, main, and upper diagonal entries."""
+    return (np.diag(e_lower, lower_offset) + np.diag(d, diagonal_offset)
+            + np.diag(e_upper, upper_offset))
 
 
-def lanczos(A):
-    v0 = np.zeros(A.shape[1])
-    v0.fill(1.)
-    v1 = v0 / np.linalg.norm(v0)
+def lanczos(A, m=None, tol=1e-12, x0=None):
+    """Return a real tridiagonal Ritz matrix for symmetric or Hermitian A.
 
-    # First iteration steps
-    x, y = [], []
-    n = A.shape[1]
-    v2, beta = 0.0, 0.0
-
-    for i in range(n):
-        # Iteration steps
-        w_prime = np.dot(A, v1)
-        conj = np.matrix.conjugate(w_prime)
-        alpha = np.dot(conj, v1)
-        w = w_prime - alpha * v1 - beta * v2
-        beta = np.linalg.norm(w)
-        x.append(np.linalg.norm(alpha))
-
-        # Reset
-        if i < (n-1):
-            y.append(beta)
-        v2 = v1
-        v1 = w/beta
-
-    return tridiag(y, x, y)
+    Run at most m steps (default n), reorthogonalizing the basis. Stop before
+    normalizing a zero residual. On breakdown, T is smaller than n x n and
+    describes the invariant subspace reached from x0, not all multiplicities.
+    tol is relative to ||A||.
+    """
+    A = matrix(A, symmetric=True)
+    n = len(A)
+    m = n if m is None else iteration_limit(m)
+    tol = tolerance(tol)
+    if not 1 <= m <= n:
+        raise ValueError("m must be between 1 and n")
+    x0 = np.ones(n) if x0 is None else vector(x0, n)
+    q = x0 / np.linalg.norm(x0)
+    q_prev = np.zeros(n)
+    beta = 0.
+    d, e, basis = [], [], []
+    scale = max(np.linalg.norm(A, ord=np.inf), np.finfo(float).tiny)
+    for k in range(m):
+        basis.append(q.copy())
+        y = A @ q
+        alpha = np.vdot(q, y).real
+        r = y - alpha * q - beta * q_prev
+        Q = np.column_stack(basis)
+        for _ in range(2):
+            r -= Q @ (Q.conj().T @ r)
+        beta = np.linalg.norm(r)
+        d.append(alpha)  # Preserve the signed Rayleigh coefficient.
+        if beta <= tol * scale or k == m - 1:
+            break
+        e.append(beta)
+        q_prev, q = q, r / beta
+    return tridiag(e, d, e)
 
 
 def generate_hermite_matrix(n):
-    A = np.zeros((n, n))
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                A[i, j] = 2 * i
-            elif i == j + 1 or i == j - 1:
-                A[i, j] = -1
-    return A
+    """Generate the n x n real symmetric matrix A used in the example."""
+    n = iteration_limit(n)
+    if n == 0:
+        raise ValueError("n must be positive")
+    return np.diag(2. * np.arange(n)) + np.diag(-np.ones(n - 1), 1) + np.diag(-np.ones(n - 1), -1)
 
 
 def main():
-    A = generate_hermite_matrix(10)
+    A = np.diag([-3., -1., 2.])
     T = lanczos(A)
+    print(np.linalg.eigvalsh(T))
+    print(np.linalg.eigvalsh(A))
 
-    print(sorted(np.linalg.eig(T)[0]))
-    print(sorted(np.linalg.eig(A)[0]))
 
-
-main()
+if __name__ == "__main__":
+    main()
